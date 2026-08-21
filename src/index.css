@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+:root {
+	color-scheme: dark;
+	--app-bg: #090c11;
+	--app-surface: #0f141c;
+	--app-surface-raised: #151c27;
+	--app-surface-hover: #1a2432;
+	--app-surface-selected: #112c47;
+	--app-rail: #0b1017;
+	--app-sidebar: #0d131c;
+	--app-border: #202b3a;
+	--app-border-strong: #2b3a4d;
+	--app-text: #eef4fb;
+	--app-text-secondary: #b6c4d4;
+	--app-text-muted: #718096;
+	--app-blue: #4da3ff;
+	--app-cyan: #42d9d0;
+	--app-focus: #70b7ff;
+}
+
+html,
+body {
+	min-height: 100%;
+	margin: 0;
+	background: var(--app-bg);
+	color: var(--app-text);
+}
+
+button,
+input,
+textarea,
+select {
+	font: inherit;
+}
+
+button,
+[role="button"] {
+	cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+	outline: 2px solid var(--app-focus);
+	outline-offset: 2px;
+}
+
+::selection {
+	background: rgb(77 163 255 / 0.28);
+	color: var(--app-text);
+}
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--app-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+	background: var(--app-border-strong);
+	border-radius: 999px;
+	border: 2px solid transparent;
+	background-clip: padding-box;
+}
+
+.app-shell {
+	background: var(--app-bg);
+	color: var(--app-text);
+}
+
+.surface-app {
+	background: var(--app-surface);
+	border-color: var(--app-border);
+}
+
+.surface-raised {
+	background: var(--app-surface-raised);
+	border-color: var(--app-border);
+}
+
+.surface-hover:hover {
+	background: var(--app-surface-hover);
+}
+
+.text-app {
+	color: var(--app-text);
+}
+
+.text-app-secondary {
+	color: var(--app-text-secondary);
+}
+
+.text-app-muted {
+	color: var(--app-text-muted);
+}
+
+/* Existing surfaces inherit the product palette while their component behavior stays unchanged. */
+.bg-white,
+.bg-neutral-50,
+.bg-neutral-100,
+.bg-neutral-200,
+.bg-neutral-300 {
+	background-color: var(--app-surface-raised) !important;
+}
+
+.text-neutral-900,
+.text-neutral-800,
+.text-neutral-700 {
+	color: var(--app-text) !important;
+}
+
+.text-neutral-600,
+.text-neutral-500,
+.text-neutral-400 {
+	color: var(--app-text-secondary) !important;
+}
+
+.border-neutral-100,
+.border-neutral-200,
+.border-neutral-300 {
+	border-color: var(--app-border) !important;
+}
+
+.hover\:bg-neutral-50:hover,
+.hover\:bg-neutral-100:hover,
+.hover\:bg-neutral-200:hover {
+	background-color: var(--app-surface-hover) !important;
+}
+
+.hover\:text-neutral-900:hover,
+.hover\:text-neutral-800:hover,
+.hover\:text-neutral-700:hover {
+	color: var(--app-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
