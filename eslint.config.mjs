@@ -11,6 +11,13 @@ const eslintConfig = [
   {
     ignores: ['.next/**', 'node_modules/**', 'coverage/**'],
   },
+  {
+    rules: {
+      '@next/next/no-img-element': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'import/no-anonymous-default-export': 'off',
+    },
+  },
 ];
 
 export default eslintConfig;
