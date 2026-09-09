@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server';
 import { getAIClient } from '../../_lib/gemini';
+import { isRecord, readString, validationError } from '../../_lib/validation';
 
 export async function POST(request: Request) {
   try {
-    const { units, activeMissions } = await request.json();
+    const body: unknown = await request.json();
+    if (!isRecord(body)) return validationError('Request body must be a JSON object');
+
+    const units = body.units;
+    const activeMissions = body.activeMissions;
+
+    if (units !== undefined && !Array.isArray(units)) {
+      return validationError('units must be an array');
+    }
+
+    if (activeMissions !== undefined && !Array.isArray(activeMissions)) {
+      return validationError('activeMissions must be an array');
+    }
+
     const client = getAIClient();
 
     if (!client) {
@@ -32,7 +46,7 @@ Provide 2-3 high-impact routing or schedule optimization directives in JSON form
   }]
 }`;
 
-    const response = await client!.models.generateContent({
+    const response = await client.models.generateContent({
       model: 'gemini-3.7-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' },
@@ -46,17 +60,8 @@ Provide 2-3 high-impact routing or schedule optimization directives in JSON form
   } catch (error) {
     console.error('Dispatch optimization error:', error);
     return NextResponse.json({
-      success: true,
-      source: 'fallback',
-      recommendations: [
-        {
-          unitId: 'OZ-701',
-          action: 'Synchronize payload conveyor feeder speed to 2.4 m/s',
-          expectedEfficiencyGain: '+11.8%',
-          fuelSavingsKgH: 5.2,
-          priority: 'HIGH',
-        },
-      ],
-    });
+      success: false,
+      error: { code: 'DISPATCH_OPTIMIZATION_FAILED', message: 'Unable to optimize dispatch assignments' },
+    }, { status: 500 });
   }
 }
