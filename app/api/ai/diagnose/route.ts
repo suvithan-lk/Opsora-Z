@@ -1,80 +1,46 @@
 import { NextResponse } from 'next/server';
 import { getAIClient } from '../../_lib/gemini';
+import { isRecord, readString, validationError } from '../../_lib/validation';
 
 export async function POST(request: Request) {
   try {
-    const { unitId, model, status, telemetry, anomalyType, logs } = await request.json();
-    const client = getAIClient();
+    const body: unknown = await request.json();
+    if (!isRecord(body)) return validationError('Request body must be a JSON object');
 
+    const unitId = readString(body.unitId, 'unitId', { maxLength: 80 });
+    const model = readString(body.model, 'model', { maxLength: 120 });
+    const status = readString(body.status, 'status', { maxLength: 80 });
+    const anomalyType = readString(body.anomalyType, 'anomalyType', { maxLength: 120 });
+    for (const result of [unitId, model, status, anomalyType]) {
+      if (!result.success) return validationError(result.error);
+    }
+
+    const client = getAIClient();
     if (!client) {
       return NextResponse.json({
         success: true,
         source: 'local-expert-rules',
         diagnosis: {
-          criticality: anomalyType ? 'HIGH' : 'NOMINAL',
-          rootCause: anomalyType
-            ? `Hydraulic proportional control valve jitter coupled with transient thermal dissipation bottleneck in Unit ${unitId || 'OZ-701'}.`
-            : 'All mechanical actuators and sensor manifolds operate within nominal ISO-10816 vibration parameters.',
-          recommendedAction: anomalyType
-            ? 'Execute automated fluid line flush cycle (Stage 2) and recalibrate high-pressure transducer at next 15-minute queue pause.'
-            : 'Maintain scheduled autonomous haul cycle without manual intervention.',
-          estimatedDowntimeRisk: anomalyType ? '18 minutes if unaddressed within 2 operating cycles' : '0.0% expected downtime',
-          maintenanceCode: anomalyType ? 'ERR-HYD-8820B' : 'STAT-OK-001',
-          prescriptiveSteps: [
-            'Trigger automatic pump pressure relief ramp to 180 bar.',
-            'Inspect secondary thermal heat exchanger thermocouple.',
-            'Verify CAN-bus baud synchronization on Node 4.',
-          ],
+          criticality: anomalyType.data ? 'HIGH' : 'NOMINAL',
+          rootCause: anomalyType.data ? `Hydraulic proportional control valve jitter in Unit ${unitId.data || 'OZ-701'}.` : 'All monitored systems operate within nominal parameters.',
+          recommendedAction: anomalyType.data ? 'Inspect the affected system and schedule maintenance.' : 'Maintain the scheduled operating cycle.',
+          estimatedDowntimeRisk: anomalyType.data ? 'Requires assessment' : '0% expected downtime',
+          maintenanceCode: anomalyType.data ? 'ERR-HYD-8820B' : 'STAT-OK-001',
+          prescriptiveSteps: ['Inspect relevant telemetry', 'Verify sensor readings', 'Record maintenance findings'],
         },
       });
     }
 
-    const prompt = `You are Opsora Z Autonomous Fleet Diagnostic Engine.
-Analyze this industrial telemetry payload and produce a structured, high-precision engineering diagnostic:
-Unit: ${unitId} (${model})
-Status: ${status}
-Anomaly flag: ${anomalyType || 'None'}
-Telemetry Snapshot: ${JSON.stringify(telemetry || {})}
-Recent System Logs: ${JSON.stringify(logs || [])}
-
-Respond with valid JSON only in this exact format:
-{
-  "criticality": "NOMINAL" | "MODERATE" | "HIGH" | "CRITICAL",
-  "rootCause": "precise technical explanation",
-  "recommendedAction": "immediate operational resolution step",
-  "estimatedDowntimeRisk": "e.g. 15 mins or 0 mins",
-  "maintenanceCode": "e.g. ERR-XXX-####",
-  "prescriptiveSteps": ["step 1", "step 2", "step 3"]
-}`;
-
-    const response = await client!.models.generateContent({
+    const prompt = `Analyze this telemetry payload and return valid JSON only. Unit: ${unitId.data || 'unknown'}; Model: ${model.data || 'unknown'}; Status: ${status.data || 'unknown'}; Anomaly: ${anomalyType.data || 'None'}; Telemetry: ${JSON.stringify(body.telemetry || {})}; Logs: ${JSON.stringify(body.logs || [])}`;
+    const response = await client.models.generateContent({
       model: 'gemini-3.7-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' },
     });
 
-    return NextResponse.json({
-      success: true,
-      source: 'gemini-3.7-flash',
-      diagnosis: JSON.parse(response.text?.trim() || '{}'),
-    });
+    return NextResponse.json({ success: true, source: 'gemini-3.7-flash', diagnosis: JSON.parse(response.text?.trim() || '{}') });
   } catch (error) {
     console.error('Diagnostic error:', error);
-    return NextResponse.json({
-      success: true,
-      source: 'fallback-rules',
-      diagnosis: {
-        criticality: 'MODERATE',
-        rootCause: 'Dynamic pressure variance observed in primary manifold circuit.',
-        recommendedAction: 'Apply closed-loop PID dampening and monitor delta over next 60s.',
-        estimatedDowntimeRisk: 'Low (< 5 min)',
-        maintenanceCode: 'WARN-PID-309',
-        prescriptiveSteps: [
-          'Verify hydraulic supply line filter delta-P',
-          'Recalibrate servo valve zero-offset',
-          'Log telemetry to blackbox buffer',
-        ],
-      },
-    });
+    return NextResponse.json({ success: false, error: { code: 'DIAGNOSTIC_FAILED', message: 'Unable to process diagnostic request' } }, { status: 500 });
   }
 }
