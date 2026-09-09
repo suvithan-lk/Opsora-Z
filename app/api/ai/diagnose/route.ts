@@ -8,16 +8,16 @@ export async function POST(request: Request) {
     if (!isRecord(body)) return validationError('Request body must be a JSON object');
 
     const unitId = readString(body.unitId, 'unitId', { maxLength: 80 });
-    if (!unitId.success) return validationError(unitId.error);
+    if (unitId.success === false) return validationError(unitId.error);
 
     const model = readString(body.model, 'model', { maxLength: 120 });
-    if (!model.success) return validationError(model.error);
+    if (model.success === false) return validationError(model.error);
 
     const status = readString(body.status, 'status', { maxLength: 80 });
-    if (!status.success) return validationError(status.error);
+    if (status.success === false) return validationError(status.error);
 
     const anomalyType = readString(body.anomalyType, 'anomalyType', { maxLength: 120 });
-    if (!anomalyType.success) return validationError(anomalyType.error);
+    if (anomalyType.success === false) return validationError(anomalyType.error);
 
     const client = getAIClient();
     if (!client) {
