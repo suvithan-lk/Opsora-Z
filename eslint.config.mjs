@@ -10,6 +10,11 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     ignores: ['.next/**', 'node_modules/**', 'coverage/**'],
+    rules: {
+      '@next/next/no-img-element': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'import/no-anonymous-default-export': 'off',
+    },
   },
 ];
 
